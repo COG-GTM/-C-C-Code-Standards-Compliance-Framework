@@ -1,0 +1,270 @@
+# =============================================================================
+# Rule Severity Mapping
+# =============================================================================
+# Maps clang-tidy checks to severity levels for reporting and CI/CD decisions.
+#
+# Severity Levels:
+#   - critical: Block merge, must fix immediately (potential crashes/security)
+#   - major: Requires review, should fix before release (potential bugs)
+#   - minor: Style/preference, fix when convenient (maintainability)
+#
+# Usage:
+#   - CI/CD can parse this file to determine pass/fail criteria
+#   - Windsurf rules reference these rule IDs
+#   - Reports can group issues by severity
+# =============================================================================
+
+version: "1.0"
+last_updated: "2025-01-22"
+
+severity_levels:
+
+  # ===========================================================================
+  # CRITICAL - Block merge, potential safety/security issues
+  # ===========================================================================
+  critical:
+    description: "Must fix before merge - safety or security risk"
+    action: "block_merge"
+    exit_code: 1
+    rules:
+
+      - rule_id: "Rule 20"
+        name: "Check all return values"
+        rationale: "Unchecked return values hide failures, leading to undefined behavior"
+        checks:
+          - bugprone-unused-return-value
+          - cert-err33-c
+        examples:
+          bad: "fopen(\"file.txt\", \"r\");"
+          good: "FILE *f = fopen(\"file.txt\", \"r\"); if (f == NULL) return -1;"
+
+      - rule_id: "Rule 21"
+        name: "Prevent buffer overflows"
+        rationale: "Buffer overflows are the #1 source of security vulnerabilities in C"
+        checks:
+          - bugprone-not-null-terminated-result
+          - clang-analyzer-security.insecureAPI.strcpy
+          - bugprone-stringview-nullptr
+          - bugprone-string-literal-with-embedded-nul
+        examples:
+          bad: "strcpy(dest, src);"
+          good: "strncpy(dest, src, sizeof(dest) - 1); dest[sizeof(dest) - 1] = '\\0';"
+
+      - rule_id: "Rule 22"
+        name: "Prevent null pointer dereference"
+        rationale: "Null dereference causes crashes and can be exploited for DoS"
+        checks:
+          - clang-analyzer-core.NullDereference
+          - clang-analyzer-core.NonNullParamChecker
+        examples:
+          bad: "int x = *ptr;"
+          good: "if (ptr != NULL) { int x = *ptr; }"
+
+      - rule_id: "Rule 23"
+        name: "Prevent resource leaks"
+        rationale: "Memory leaks degrade performance and can crash long-running systems"
+        checks:
+          - clang-analyzer-unix.Malloc
+          - clang-analyzer-unix.MallocSizeof
+          - clang-analyzer-unix.MismatchedDeallocator
+          - clang-analyzer-cplusplus.NewDelete
+          - clang-analyzer-cplusplus.NewDeleteLeaks
+        examples:
+          bad: "char *buf = malloc(100); if (error) return;"
+          good: "char *buf = malloc(100); if (error) { free(buf); return; }"
+
+      - rule_id: "Rule 24"
+        name: "Prevent use-after-free"
+        rationale: "Use-after-free is a critical security vulnerability (CWE-416)"
+        checks:
+          - bugprone-use-after-move
+          - bugprone-double-free
+          - clang-analyzer-core.StackAddressEscape
+        examples:
+          bad: "free(ptr); printf(\"%s\", ptr);"
+          good: "free(ptr); ptr = NULL;"
+
+      - rule_id: "Rule 25"
+        name: "Prevent uninitialized memory access"
+        rationale: "Uninitialized memory causes undefined behavior and security issues"
+        checks:
+          - clang-analyzer-core.uninitialized.Assign
+          - clang-analyzer-core.uninitialized.Branch
+          - clang-analyzer-core.uninitialized.ArraySubscript
+          - clang-analyzer-core.UndefinedBinaryOperatorResult
+        examples:
+          bad: "int x; return x;"
+          good: "int x = 0; return x;"
+
+      - rule_id: "Rule 26"
+        name: "Avoid security vulnerabilities"
+        rationale: "Insecure APIs and patterns lead to exploitable vulnerabilities"
+        checks:
+          - clang-analyzer-security.FloatLoopCounter
+          - clang-analyzer-security.insecureAPI.rand
+          - clang-analyzer-security.insecureAPI.getpw
+          - cert-msc30-c
+          - cert-msc50-cpp
+          - cert-env33-c
+        examples:
+          bad: "int r = rand();"
+          good: "int r; if (getrandom(&r, sizeof(r), 0) != sizeof(r)) return -1;"
+
+  # ===========================================================================
+  # MAJOR - Requires review, potential bugs
+  # ===========================================================================
+  major:
+    description: "Requires review - potential bugs or quality issues"
+    action: "require_review"
+    exit_code: 0
+    rules:
+
+      - rule_id: "Rule 30"
+        name: "Avoid narrowing conversions"
+        rationale: "Implicit narrowing can silently truncate data causing subtle bugs"
+        checks:
+          - bugprone-narrowing-conversions
+          - bugprone-implicit-widening-of-multiplication-result
+        examples:
+          bad: "int x = long_value;"
+          good: "if (long_value > INT_MAX) return -1; int x = (int)long_value;"
+
+      - rule_id: "Rule 31"
+        name: "Consistent parameter names"
+        rationale: "Mismatched names between declaration and definition cause confusion"
+        checks:
+          - readability-inconsistent-declaration-parameter-name
+        examples:
+          bad: "// decl: int foo(int count); def: int foo(int n)"
+          good: "// decl: int foo(int count); def: int foo(int count)"
+
+      - rule_id: "Rule 32"
+        name: "Avoid redundant code"
+        rationale: "Redundant code indicates logic errors or copy-paste mistakes"
+        checks:
+          - misc-redundant-expression
+          - bugprone-branch-clone
+          - readability-redundant-control-flow
+          - readability-redundant-declaration
+        examples:
+          bad: "if (x > 0) return 1; else if (x > 0) return 2;"
+          good: "if (x > 0) return 1; else if (x < 0) return 2;"
+
+      - rule_id: "Rule 33"
+        name: "Prevent infinite loops"
+        rationale: "Infinite loops cause hangs and denial of service"
+        checks:
+          - bugprone-infinite-loop
+          - clang-analyzer-core.DivideZero
+        examples:
+          bad: "while (1) { if (done) continue; }"
+          good: "while (!done) { process(); }"
+
+      - rule_id: "Rule 34"
+        name: "Thread safety"
+        rationale: "Non-thread-safe functions cause data races in concurrent code"
+        checks:
+          - concurrency-mt-unsafe
+          - bugprone-spuriously-wake-up-functions
+        examples:
+          bad: "char *home = getenv(\"HOME\");"
+          good: "char home[PATH_MAX]; if (getenv_r(\"HOME\", home, sizeof(home)) != 0) ..."
+
+      - rule_id: "Rule 35"
+        name: "Performance issues"
+        rationale: "Unnecessary copies and allocations waste CPU and memory"
+        checks:
+          - performance-unnecessary-copy-initialization
+          - performance-unnecessary-value-param
+          - performance-move-const-arg
+          - performance-for-range-copy
+          - performance-inefficient-string-concatenation
+        examples:
+          bad: "void process(std::string s);"
+          good: "void process(const std::string &s);"
+
+  # ===========================================================================
+  # MINOR - Style/maintainability warnings
+  # ===========================================================================
+  minor:
+    description: "Style or maintainability - fix when convenient"
+    action: "warn_only"
+    exit_code: 0
+    rules:
+
+      - rule_id: "Rule 40"
+        name: "Consistent formatting"
+        rationale: "Consistent style improves readability and reduces merge conflicts"
+        checks:
+          - "clang-format"
+        enforced_by: ".clang-format"
+
+      - rule_id: "Rule 41"
+        name: "Naming conventions"
+        rationale: "Consistent naming makes code more predictable and searchable"
+        checks:
+          - readability-identifier-naming
+        conventions:
+          functions: "lower_case"
+          variables: "lower_case"
+          constants: "UPPER_CASE"
+          types: "CamelCase"
+
+      - rule_id: "Rule 42"
+        name: "Always use braces"
+        rationale: "Braces prevent bugs when adding statements to conditionals/loops"
+        checks:
+          - readability-braces-around-statements
+        examples:
+          bad: "if (error) return -1;"
+          good: "if (error) { return -1; }"
+
+      - rule_id: "Rule 43"
+        name: "Simplify boolean expressions"
+        rationale: "Complex boolean expressions are error-prone and hard to read"
+        checks:
+          - readability-simplify-boolean-expr
+        examples:
+          bad: "if (flag == true)"
+          good: "if (flag)"
+
+      - rule_id: "Rule 44"
+        name: "Avoid else after return"
+        rationale: "Unnecessary else after return increases indentation"
+        checks:
+          - readability-else-after-return
+        examples:
+          bad: "if (error) { return -1; } else { process(); }"
+          good: "if (error) { return -1; } process();"
+
+      - rule_id: "Rule 45"
+        name: "Use nullptr (C++)"
+        rationale: "nullptr is type-safe, NULL and 0 are not"
+        checks:
+          - modernize-use-nullptr
+        language: "C++ only"
+        examples:
+          bad: "char *p = NULL;"
+          good: "char *p = nullptr;"
+
+      - rule_id: "Rule 46"
+        name: "Remove unused parameters"
+        rationale: "Unused parameters indicate dead code or missing implementation"
+        checks:
+          - misc-unused-parameters
+        examples:
+          bad: "int process(int x, int unused) { return x; }"
+          good: "int process(int x) { return x; }"
+
+# =============================================================================
+# SUPPRESSION GUIDANCE
+# =============================================================================
+suppression:
+  single_line: "// NOLINT(check-name)"
+  block_start: "// NOLINTBEGIN(check-name)"
+  block_end: "// NOLINTEND(check-name)"
+  file_level: "// NOLINTFILE(check-name)"
+  notes:
+    - "Always add a comment explaining why the suppression is needed"
+    - "Prefer fixing the issue over suppressing it"
+    - "Suppressions should be reviewed in code review"

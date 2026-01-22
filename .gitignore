@@ -1,0 +1,48 @@
+# Build artifacts
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.a
+*.so
+*.dylib
+build/
+cmake-build-*/
+compile_commands.json
+
+# IDE and editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.cproject
+.settings/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+venv/
+.env
+*.egg-info/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Test artifacts
+*.log
+test_output/
+coverage/
+.coverage
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
