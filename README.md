@@ -6,6 +6,55 @@
 
 ---
 
+## Executive Summary (For Decision-Makers & Non-C Developers)
+
+### What Are clang-format and clang-tidy?
+
+Think of them as **spell-check and grammar-check for C/C++ code**:
+
+| Tool | What It Does | Analogy |
+|------|--------------|---------|
+| **clang-format** | Makes code look consistent (spacing, indentation, brackets) | Auto-formatting a Word doc to match a style guide |
+| **clang-tidy** | Finds bugs and security issues in code | Grammarly flagging unclear sentences or errors |
+
+These are **free, industry-standard tools**. The challenge? They come with **300+ configuration options** and no opinion on what's correct.
+
+### Why Not Just Use the Tools Directly?
+
+| Without This Framework | With This Framework |
+|------------------------|---------------------|
+| Spend **4-8 hours** researching 300+ options | Copy 2 files, **ready in 5 minutes** |
+| Every warning looks the same priority | Clear **Critical/Major/Minor** classification |
+| Describe issues with jargon | Reference by **Rule ID** ("Rule 21 violation") |
+| Write your own CI/CD integration | **Copy-paste** GitHub Actions example |
+| Hope you didn't miss important security checks | **Pre-configured** with CERT security standards |
+| AI assistant gives generic help | AI **enforces your rules** with fix suggestions |
+
+### The Analogy
+
+**clang-format + clang-tidy alone** = A blank spreadsheet app
+
+**This framework** = A pre-built accounting template with:
+- ✅ Columns already labeled
+- ✅ Formulas already set up  
+- ✅ Color-coding for "over budget" (red) vs "on track" (green)
+- ✅ Instructions for auditors
+- ✅ One-click "Generate Report" button
+
+You *could* build all that yourself. But why would you?
+
+### Bottom Line
+
+| Metric | Value |
+|--------|-------|
+| **Setup time saved** | 4-8 hours per project |
+| **Bugs caught** | Null dereference, buffer overflow, memory leaks, use-after-free |
+| **Security standards** | CERT C, MISRA-inspired checks |
+| **AI integration** | Windsurf Cascade enforces rules automatically |
+| **Cost** | Free (MIT License) |
+
+---
+
 ## Table of Contents
 
 - [What Is This?](#what-is-this)
