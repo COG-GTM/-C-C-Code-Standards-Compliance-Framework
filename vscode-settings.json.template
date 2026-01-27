@@ -1,0 +1,100 @@
+{
+  // ==========================================================================
+  // VSCode/Windsurf Settings for clangd Integration
+  // ==========================================================================
+  // Copy this file to .vscode/settings.json in your project
+  // Or copy these settings to your workspace/user settings
+  // ==========================================================================
+
+  // ---------------------------------------------------------------------------
+  // Disable Microsoft C/C++ IntelliSense (conflicts with clangd)
+  // ---------------------------------------------------------------------------
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "C_Cpp.autocomplete": "disabled",
+  "C_Cpp.errorSquiggles": "disabled",
+  "C_Cpp.formatting": "disabled",
+
+  // ---------------------------------------------------------------------------
+  // clangd Configuration
+  // ---------------------------------------------------------------------------
+  // Path to clangd binary (adjust if needed)
+  "clangd.path": "clangd",
+  
+  // Arguments passed to clangd
+  "clangd.arguments": [
+    // Use our .clangd config file
+    "--enable-config",
+    // Background indexing for faster navigation
+    "--background-index",
+    // Show completions with snippets
+    "--completion-style=detailed",
+    // Include completion items with parentheses
+    "--function-arg-placeholders",
+    // Show header insertion suggestions
+    "--header-insertion=iwyu",
+    // Preamble optimization
+    "--pch-storage=memory",
+    // Number of parallel workers
+    "-j=4",
+    // Log level (error, info, verbose)
+    "--log=info",
+    // Show clang-tidy diagnostics
+    "--clang-tidy",
+    // Show inlay hints
+    "--inlay-hints"
+  ],
+
+  // Restart clangd when compile_commands.json changes
+  "clangd.restartAfterCrash": true,
+  "clangd.detectExtensionConflicts": true,
+
+  // ---------------------------------------------------------------------------
+  // Editor Settings for C/C++
+  // ---------------------------------------------------------------------------
+  "[c]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+
+  // ---------------------------------------------------------------------------
+  // Inlay Hints
+  // ---------------------------------------------------------------------------
+  "editor.inlayHints.enabled": "onUnlessPressed",
+  "editor.inlayHints.fontSize": 11,
+  "editor.inlayHints.padding": true,
+
+  // ---------------------------------------------------------------------------
+  // File Associations
+  // ---------------------------------------------------------------------------
+  "files.associations": {
+    "*.h": "c",
+    "*.c": "c",
+    "*.hpp": "cpp",
+    "*.cpp": "cpp",
+    "*.cc": "cpp",
+    "*.cxx": "cpp"
+  },
+
+  // ---------------------------------------------------------------------------
+  // Exclude from Search/Watch
+  // ---------------------------------------------------------------------------
+  "files.watcherExclude": {
+    "**/build/**": true,
+    "**/.git/**": true,
+    "**/compile_commands.json": true
+  },
+  "search.exclude": {
+    "**/build": true,
+    "**/compile_commands.json": true
+  }
+}

@@ -67,6 +67,7 @@ You *could* build all that yourself. But why would you?
 - [Rule Reference](#rule-reference)
 - [Repository Contents](#repository-contents)
 - [CI/CD Integration](#cicd-integration)
+- [clangd IDE Integration](#clangd-ide-integration)
 - [Windsurf AI Integration](#windsurf-ai-integration)
 - [Customization](#customization)
 - [Requirements](#requirements)
@@ -151,7 +152,7 @@ This framework solves these problems by providing:
 | **macOS** | Full support |
 | **Windows** | Full support (with LLVM/clang installed) |
 | **CI/CD Pipelines** | GitHub Actions, GitLab CI, Jenkins, etc. |
-| **IDEs** | VSCode, CLion, Vim (with clang integration) |
+| **IDEs** | VSCode, CLion, Vim, **Windsurf** (with clangd integration) |
 | **Windsurf** | Full AI integration |
 
 ### Project Types
@@ -321,7 +322,9 @@ See `docs/rule-reference.md` for detailed examples of each rule.
 ├── README.md                      # This documentation
 ├── .clang-format                  # Code formatting configuration
 ├── .clang-tidy                    # Static analysis configuration
+├── .clangd                        # clangd language server configuration
 ├── rule-severity-mapping.yaml     # Severity classification
+├── vscode-settings.json.template  # VSCode/Windsurf settings template
 │
 ├── windsurf/
 │   └── c-safety-critical-rules.md # Windsurf AI rules
@@ -331,14 +334,16 @@ See `docs/rule-reference.md` for detailed examples of each rule.
 │   └── violations.c               # Code with intentional violations (for testing)
 │
 ├── scripts/
-│   └── validate.sh                # Validation wrapper script
+│   ├── validate.sh                # Validation wrapper script
+│   └── generate-compile-commands.sh # Generate compile_commands.json for clangd
 │
 ├── tests/
 │   ├── __init__.py
 │   └── test_compliance.py         # Automated tests for configs
 │
 └── docs/
-    └── rule-reference.md          # Detailed rule documentation
+    ├── rule-reference.md          # Detailed rule documentation
+    └── clangd-setup.md            # clangd setup guide
 ```
 
 ---
@@ -408,6 +413,49 @@ if [ -n "$STAGED_FILES" ]; then
     echo "$STAGED_FILES" | xargs git add
 fi
 ```
+
+---
+
+## clangd IDE Integration
+
+This framework includes full **clangd** language server support for intelligent C/C++ development in Windsurf, VSCode, and other editors.
+
+### Why clangd?
+
+| Feature | Benefit |
+|---------|---------|
+| **Code Completion** | Context-aware suggestions |
+| **Go to Definition** | Jump to any symbol |
+| **Find References** | Find all usages |
+| **Real-time Diagnostics** | Errors/warnings as you type |
+| **Inline Hints** | Parameter names, types |
+| **Format on Save** | Uses our .clang-format |
+
+### Quick Setup
+
+```bash
+# 1. Generate compile_commands.json (required for clangd)
+./scripts/generate-compile-commands.sh
+
+# 2. Copy VSCode/Windsurf settings
+mkdir -p .vscode
+cp vscode-settings.json.template .vscode/settings.json
+
+# 3. Restart your editor
+```
+
+### Files Included
+
+| File | Purpose |
+|------|---------|
+| `.clangd` | clangd language server configuration |
+| `scripts/generate-compile-commands.sh` | Generate compilation database |
+| `vscode-settings.json.template` | Editor settings template |
+| `docs/clangd-setup.md` | Detailed setup guide |
+
+> **Note:** If the clangd extension isn't available in Windsurf's marketplace, clangd still works via the Language Server Protocol. Just ensure clangd is installed (`brew install llvm` on macOS) and in your PATH.
+
+See **[docs/clangd-setup.md](docs/clangd-setup.md)** for detailed instructions and troubleshooting.
 
 ---
 
@@ -550,6 +598,13 @@ Download LLVM from https://releases.llvm.org/ and add to PATH.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ```
 Then run clang-tidy with `--config-file=.clang-tidy -p build/`.
+
+### Q: How do I set up clangd for IDE integration?
+
+**A:** This framework includes full clangd support:
+1. Generate `compile_commands.json`: `./scripts/generate-compile-commands.sh`
+2. Copy VSCode settings: `mkdir -p .vscode && cp vscode-settings.json.template .vscode/settings.json`
+3. See `docs/clangd-setup.md` for detailed instructions
 
 ### Q: How do I handle legacy code with many violations?
 
