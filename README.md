@@ -8,14 +8,52 @@
 
 ## Executive Summary (For Decision-Makers & Non-C Developers)
 
-### What Are clang-format and clang-tidy?
+### The Three Clang Tools Explained
 
-Think of them as **spell-check and grammar-check for C/C++ code**:
+This framework uses **three related but different tools** from the LLVM/Clang project:
 
-| Tool | What It Does | Analogy |
-|------|--------------|---------|
-| **clang-format** | Makes code look consistent (spacing, indentation, brackets) | Auto-formatting a Word doc to match a style guide |
-| **clang-tidy** | Finds bugs and security issues in code | Grammarly flagging unclear sentences or errors |
+| Tool | Config File | What It Does | When It Runs |
+|------|-------------|--------------|--------------|
+| **clang-format** | `.clang-format` | Makes code look consistent (spacing, braces) | On save, or manually |
+| **clang-tidy** | `.clang-tidy` | Finds bugs and security issues | In CI/CD, or manually |
+| **clangd** | `.clangd` | Powers IDE features (autocomplete, go-to-definition, real-time errors) | Continuously in your editor |
+
+Think of them as **spell-check, grammar-check, and an intelligent writing assistant** for C/C++ code:
+
+| Tool | Analogy |
+|------|---------|
+| **clang-format** | Auto-formatting a Word doc to match a style guide |
+| **clang-tidy** | Grammarly flagging unclear sentences or errors |
+| **clangd** | A smart assistant that highlights issues as you type and helps you navigate |
+
+#### How They Work Together
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     YOUR EDITOR (Windsurf/VSCode)               │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │                      clangd                                │ │
+│  │         (runs continuously, powers IDE features)          │ │
+│  │                                                           │ │
+│  │  • Autocomplete suggestions                               │ │
+│  │  • Go-to-definition (Cmd+Click)                          │ │
+│  │  • Find all references                                    │ │
+│  │  • Real-time error squiggles (uses clang-tidy checks!)   │ │
+│  │  • Hover documentation                                    │ │
+│  │  • Format on save (uses clang-format!)                   │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                              │                                  │
+│              ┌───────────────┴───────────────┐                 │
+│              ▼                               ▼                 │
+│       ┌─────────────┐                 ┌─────────────┐         │
+│       │.clang-format│                 │ .clang-tidy │         │
+│       │  (styling)  │                 │  (analysis) │         │
+│       └─────────────┘                 └─────────────┘         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+> **Key insight:** clangd **incorporates** both clang-format and clang-tidy! When you see real-time warnings in your editor, those come from clang-tidy rules. When you format on save, that uses clang-format. The `.clangd` file customizes how these run in your IDE.
 
 These are **free, industry-standard tools**. The challenge? They come with **300+ configuration options** and no opinion on what's correct.
 
@@ -420,42 +458,110 @@ fi
 
 This framework includes full **clangd** language server support for intelligent C/C++ development in Windsurf, VSCode, and other editors.
 
-### Why clangd?
+### What You Need (3 Things)
 
-| Feature | Benefit |
-|---------|---------|
-| **Code Completion** | Context-aware suggestions |
-| **Go to Definition** | Jump to any symbol |
-| **Find References** | Find all usages |
-| **Real-time Diagnostics** | Errors/warnings as you type |
-| **Inline Hints** | Parameter names, types |
-| **Format on Save** | Uses our .clang-format |
+To get full IDE intelligence for C/C++, you need **three components**:
 
-### Quick Setup
+| Component | What It Is | Where to Get It |
+|-----------|-----------|-----------------|
+| **1. clangd (program)** | The "brain" that analyzes your code | Install on your computer (see below) |
+| **2. clangd extension** | Connects your editor to clangd | Install from Windsurf/VSCode marketplace |
+| **3. This framework** | Pre-configured settings | You're looking at it! |
 
+### Step 1: Install clangd on Your Computer
+
+**macOS (Homebrew):**
 ```bash
-# 1. Generate compile_commands.json (required for clangd)
-./scripts/generate-compile-commands.sh
+brew install llvm
 
-# 2. Copy VSCode/Windsurf settings
-mkdir -p .vscode
-cp vscode-settings.json.template .vscode/settings.json
+# Add to your shell profile (~/.zshrc or ~/.bash_profile)
+echo 'export PATH="/opt/homebrew/opt/llvm/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 
-# 3. Restart your editor
+# Verify it works
+clangd --version
 ```
 
-### Files Included
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install clangd-15  # or just 'clangd'
+
+# Verify
+clangd --version
+```
+
+**Windows:**
+1. Download LLVM from https://releases.llvm.org/
+2. Run the installer
+3. Check "Add LLVM to PATH" during installation
+4. Open new terminal and run `clangd --version`
+
+### Step 2: Install the clangd Extension in Windsurf
+
+1. Open Windsurf
+2. Go to Extensions (Cmd+Shift+X on Mac, Ctrl+Shift+X on Windows/Linux)
+3. Search for **"clangd"**
+4. Install the one by **llvm-vs-code-extensions** (has 4.6M downloads)
+5. **Important:** If prompted, disable Microsoft's C/C++ IntelliSense (it conflicts with clangd)
+
+### Step 3: Use This Framework in Your Project
+
+**Option A: Clone and copy configs to your existing project**
+```bash
+# Clone this framework
+git clone https://github.com/COG-GTM/-C-Code-Standards-Compliance-Framework.git
+
+# Copy the config files to your project
+cp -C-Code-Standards-Compliance-Framework/.clang-format /path/to/your/project/
+cp -C-Code-Standards-Compliance-Framework/.clang-tidy /path/to/your/project/
+cp -C-Code-Standards-Compliance-Framework/.clangd /path/to/your/project/
+
+# Copy the scripts
+cp -r -C-Code-Standards-Compliance-Framework/scripts /path/to/your/project/
+
+# Generate compile_commands.json (required for clangd to work fully)
+cd /path/to/your/project
+./scripts/generate-compile-commands.sh
+```
+
+**Option B: Use this repo as a template (new projects)**
+1. Click "Use this template" on GitHub
+2. Clone your new repo
+3. Run `./scripts/generate-compile-commands.sh`
+4. Start coding!
+
+### Step 4: Configure Your Editor Settings
+
+```bash
+# In your project directory
+mkdir -p .vscode
+cp vscode-settings.json.template .vscode/settings.json
+```
+
+This configures Windsurf/VSCode to:
+- Use clangd instead of Microsoft's C++ IntelliSense
+- Format on save using our `.clang-format`
+- Show clang-tidy warnings in real-time
+
+### Verify Everything Works
+
+After setup, you should see:
+- ✅ **Autocomplete** when you type (e.g., type `mal` and see `malloc` suggested)
+- ✅ **Go to Definition** works (Cmd+Click on a function name)
+- ✅ **Real-time errors** appear as red squiggles
+- ✅ **Hover info** shows function signatures and docs
+
+If something isn't working, see **[docs/clangd-setup.md](docs/clangd-setup.md)** for troubleshooting.
+
+### Files Included for clangd
 
 | File | Purpose |
 |------|---------|
-| `.clangd` | clangd language server configuration |
-| `scripts/generate-compile-commands.sh` | Generate compilation database |
-| `vscode-settings.json.template` | Editor settings template |
-| `docs/clangd-setup.md` | Detailed setup guide |
-
-> **Note:** If the clangd extension isn't available in Windsurf's marketplace, clangd still works via the Language Server Protocol. Just ensure clangd is installed (`brew install llvm` on macOS) and in your PATH.
-
-See **[docs/clangd-setup.md](docs/clangd-setup.md)** for detailed instructions and troubleshooting.
+| `.clangd` | Tells clangd which checks to run, include paths, etc. |
+| `scripts/generate-compile-commands.sh` | Creates `compile_commands.json` (clangd needs this to understand your project) |
+| `vscode-settings.json.template` | Editor settings to enable clangd and disable conflicting extensions |
+| `docs/clangd-setup.md` | Detailed setup guide with troubleshooting |
 
 ---
 
